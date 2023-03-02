@@ -215,38 +215,14 @@ impl LocalStorageVecIndex for RangeTo<usize> {}
 impl LocalStorageVecIndex for RangeFrom<usize> {}
 impl LocalStorageVecIndex for Range<usize> {}
 
-// impl<T, I, const N: usize> Index<I> for LocalStorageVec<T, N>
-// where
-//     I: LocalStorageVecIndex,
-//     [T]: Index<I>,
-// {
-// }
-
-impl<T, const N: usize> Index<usize> for LocalStorageVec<T, N> {
-    type Output = T;
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.as_ref()[index]
-    }
-}
-
-impl<T, const N: usize> Index<RangeTo<usize>> for LocalStorageVec<T, N> {
-    type Output = [T];
-    fn index(&self, index: RangeTo<usize>) -> &Self::Output {
-        &self.as_ref()[..index.end]
-    }
-}
-
-impl<T, const N: usize> Index<RangeFrom<usize>> for LocalStorageVec<T, N> {
-    type Output = [T];
-    fn index(&self, index: RangeFrom<usize>) -> &Self::Output {
-        &self.as_ref()[index.start..]
-    }
-}
-
-impl<T, const N: usize> Index<Range<usize>> for LocalStorageVec<T, N> {
-    type Output = [T];
-    fn index(&self, index: Range<usize>) -> &Self::Output {
-        &self.as_ref()[index.start..index.end]
+impl<T, I, const N: usize> Index<I> for LocalStorageVec<T, N>
+where
+    I: LocalStorageVecIndex,
+    [T]: Index<I>,
+{
+    type Output = <[T] as Index<I>>::Output;
+    fn index(&self, index: I) -> &Self::Output {
+        self.as_ref().index(index)
     }
 }
 
@@ -511,16 +487,16 @@ mod test {
     }
 
     // Uncomment me for part J
-    // #[test]
-    // fn it_derefs() {
-    //     use std::ops::{Deref, DerefMut};
-    //     let vec: LocalStorageVec<_, 128> = LocalStorageVec::from([0; 128].as_slice());
-    //     // `chunks` is a method that's defined for slices `[T]`, that we can use thanks to `Deref`
-    //     let chunks = vec.chunks(4);
-    //     let slice: &[_] = vec.deref();
-    //
-    //     let mut vec: LocalStorageVec<_, 128> = LocalStorageVec::from([0; 128].as_slice());
-    //     let chunks = vec.chunks_mut(4);
-    //     let slice: &mut [_] = vec.deref_mut();
-    // }
+    #[test]
+    fn it_derefs() {
+        use std::ops::{Deref, DerefMut};
+        let vec: LocalStorageVec<_, 128> = LocalStorageVec::from([0; 128].as_slice());
+        // `chunks` is a method that's defined for slices `[T]`, that we can use thanks to `Deref`
+        let chunks = vec.chunks(4);
+        let slice: &[_] = vec.deref();
+
+        let mut vec: LocalStorageVec<_, 128> = LocalStorageVec::from([0; 128].as_slice());
+        let chunks = vec.chunks_mut(4);
+        let slice: &mut [_] = vec.deref_mut();
+    }
 }
