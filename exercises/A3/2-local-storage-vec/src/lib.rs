@@ -1,4 +1,4 @@
-use std::ops::{Index, Range, RangeFrom, RangeTo};
+use std::ops::{Deref, DerefMut, Index, Range, RangeFrom, RangeTo};
 
 /// A growable, generic list that resides on the stack if it's small,
 /// but is moved to the heap to grow larger if needed.
@@ -210,6 +210,12 @@ impl<T, const N: usize> From<Vec<T>> for LocalStorageVec<T, N> {
     }
 }
 
+impl<T: Clone, const N: usize> From<&[T]> for LocalStorageVec<T, N> {
+    fn from(v: &[T]) -> Self {
+        Self::Heap(v.to_vec())
+    }
+}
+
 impl LocalStorageVecIndex for usize {}
 impl LocalStorageVecIndex for RangeTo<usize> {}
 impl LocalStorageVecIndex for RangeFrom<usize> {}
@@ -223,6 +229,20 @@ where
     type Output = <[T] as Index<I>>::Output;
     fn index(&self, index: I) -> &Self::Output {
         self.as_ref().index(index)
+    }
+}
+
+impl<T, const N: usize> Deref for LocalStorageVec<T, N> {
+    type Target = [T];
+
+    fn deref(&self) -> &Self::Target {
+        <Self as AsRef<[T]>>::as_ref(self)
+    }
+}
+
+impl<T, const N: usize> DerefMut for LocalStorageVec<T, N> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        <Self as AsMut<[T]>>::as_mut(self)
     }
 }
 
@@ -492,11 +512,11 @@ mod test {
         use std::ops::{Deref, DerefMut};
         let vec: LocalStorageVec<_, 128> = LocalStorageVec::from([0; 128].as_slice());
         // `chunks` is a method that's defined for slices `[T]`, that we can use thanks to `Deref`
-        let chunks = vec.chunks(4);
-        let slice: &[_] = vec.deref();
+        let _chunks = vec.chunks(4);
+        let _slice: &[_] = vec.deref();
 
         let mut vec: LocalStorageVec<_, 128> = LocalStorageVec::from([0; 128].as_slice());
-        let chunks = vec.chunks_mut(4);
-        let slice: &mut [_] = vec.deref_mut();
+        let _chunks = vec.chunks_mut(4);
+        let _slice: &mut [_] = vec.deref_mut();
     }
 }
