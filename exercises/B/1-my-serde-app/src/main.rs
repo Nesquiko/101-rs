@@ -19,7 +19,10 @@ fn main() -> anyhow::Result<()> {
 
     println!("deserialized = {:?}", post);
 
-    let post_json: String = match serde_json::to_value(post) {
+    let post_json: String = serde_json::to_string(&post)?;
+    println!("serialized = {:?}", post_json);
+
+    let post_json: String = match serde_json::to_string(&post) {
         Ok(json) => json.to_string(),
         Err(err) => {
             println!("error = {:?}", err);
@@ -28,7 +31,7 @@ fn main() -> anyhow::Result<()> {
     };
     println!("serialized = {:?}", post_json);
 
-    Err(anyhow::anyhow!("errrrrr...."))
+    Ok(())
 }
 
 fn fetch_data() -> String {
