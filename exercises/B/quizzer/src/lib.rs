@@ -1,15 +1,14 @@
 mod error;
 
 use std::{
-    fs::{self, OpenOptions},
+    fs::{File, OpenOptions},
     io::Write,
     ops::Index,
     path::Path,
 };
 
+pub use error::QuizError;
 use serde::{Deserialize, Serialize};
-
-use crate::error::QuizError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Quiz {
@@ -25,21 +24,18 @@ impl Quiz {
             file,
             questions: vec![],
         };
-
-        if Path::new(&quiz.file).exists() {
-            fs::remove_file(Path::new(&quiz.file))?;
+        if !Path::new(&quiz.file).exists() {
+            OpenOptions::new()
+                .create_new(true)
+                .write(true)
+                .open(&quiz.file)?;
+            quiz.save()?;
         };
-        quiz.save()?;
-
         Ok(quiz)
     }
 
     fn save(&self) -> anyhow::Result<(), QuizError> {
-        let mut f = OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(&self.file)?;
-
+        let mut f = File::create(&self.file)?;
         let json = serde_json::to_string(&self)?;
         f.write_all(json.as_bytes())?;
         Ok(())
@@ -93,10 +89,18 @@ impl<'a> Iterator for QuizIter<'a> {
 pub struct Question {
     question: String,
     correct_answer: String,
-    other_answers: [String; 3],
+    other_answers: Vec<String>,
 }
 
 impl Question {
+    pub fn new(question: String, correct_answer: String, other_answers: Vec<String>) -> Self {
+        Self {
+            question,
+            correct_answer,
+            other_answers,
+        }
+    }
+
     pub fn question(&self) -> &str {
         self.question.as_ref()
     }
@@ -105,7 +109,7 @@ impl Question {
         self.correct_answer.as_ref()
     }
 
-    pub fn other_answers(&self) -> &[String; 3] {
-        &self.other_answers
+    pub fn other_answers(&self) -> &[String] {
+        self.other_answers.as_ref()
     }
 }
