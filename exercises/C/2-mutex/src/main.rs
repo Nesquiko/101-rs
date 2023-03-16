@@ -37,6 +37,8 @@ unsafe impl<T: Send> Sync for Mutex<T> {
     /* no methods to implement */
 }
 
+unsafe impl<T: Send> Send for Mutex<T> {}
+
 struct MutexGuard<'a, T> {
     mutex: &'a Mutex<T>,
 }
@@ -62,15 +64,16 @@ impl<T> Mutex<T> {
     }
 
     pub fn lock(&self) -> MutexGuard<T> {
-        // TODO: implement lock()
-        todo!()
+        self.locked.store(true, Ordering::Release);
+        MutexGuard { mutex: self }
     }
 
     pub fn into_inner(self) -> T {
+        self.block_until_you_lock();
         // TODO: implement into_inner()
         // hint: look at the available functions on UnsafeCell
         // question: do you need to `block_until_you_lock`?
-        todo!()
+        self.cell.into_inner()
     }
 }
 
@@ -104,6 +107,12 @@ impl<T> DerefMut for MutexGuard<'_, T> {
 
 // TODO: implement a `Drop` for MutexGuard that unlocks the mutex
 // use the `unlock` method that is already defined for `Mutex`
+
+impl<'a, T> Drop for MutexGuard<'a, T> {
+    fn drop(&mut self) {
+        self.mutex.unlock();
+    }
+}
 
 // The function main() should execute cleanly and normally, i.e. without entering a deadlock
 // situation and certainly not causing any undefined behaviour.
